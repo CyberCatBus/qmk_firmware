@@ -12,7 +12,7 @@ bool oled_task_kb(void) {
     if (!oled_task_user()) {
         return false;
     }
-    oled_write_P(PSTR("Avalanche\nVersion 4"), false);
+//    oled_write_P(PSTR("Avalanche\nVersion 4"), false);
     return true;
 }
 #endif

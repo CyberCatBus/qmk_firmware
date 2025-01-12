@@ -9,3 +9,7 @@
 #    define OLED_DISPLAY_128X64
 #    define OLED_TIMEOUT 30000
 #endif
+
+// my additions
+#define TAPPING_TOGGLE 2
+#define TAPPING_TERM 200
