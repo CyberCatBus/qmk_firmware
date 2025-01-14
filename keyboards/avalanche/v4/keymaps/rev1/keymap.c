@@ -7,6 +7,8 @@ qmk flash -kb avalanche/v4 -km default
 */
 
 #include QMK_KEYBOARD_H
+static uint8_t meow = 0;
+static uint8_t last_meow = 255;
 
 
 // Define my layers (prefix _ to not conflict key names)
@@ -199,8 +201,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      */
     [_TRI] = LAYOUT(
                  _______, _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, _______,
-                 _______, _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, KC_PSCR, _______,
-        _______, _______, _______, _______, _______, _______, _______,                                     KC_HOME, KC_PGDN, KC_PGUP, KC_END,  _______, _______, _______,
+                 _______, _______, RM_HUEU, RM_SATU, RM_VALU, _______,                                     _______, _______, _______, _______, KC_PSCR, _______,
+        _______, _______, _______, RM_HUED, RM_SATD, RM_VALD, _______,                                     KC_HOME, KC_PGDN, KC_PGUP, KC_END,  _______, _______, _______,
                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
@@ -213,24 +215,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 static bool is_salt = false;
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    uint8_t curr_layer = biton32(layer_state);
-
     // clockwise need to be inverted for expected results
     if (index == 1) {
-        if (curr_layer == 5) { // if on LOWER layer
-            if (!clockwise) {
-                tap_code16(RM_VALU); // Backlight brightness up
-            } else {
-                tap_code16(RM_VALD); // Backlight brightness down
-            }
-        } else if (is_salt) { // special alt is active
+        if (is_salt) { // special alt is active
             if (!clockwise) {
                 tap_code(KC_TAB);
             } else {
                 tap_code16(S(KC_TAB));
             }
         } else { // All other layers
-            if (!clockwise) {
+            if (clockwise) {
                 tap_code(KC_PGUP);
             } else {
                 tap_code(KC_PGDN);
@@ -244,52 +238,95 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 #ifdef OLED_ENABLE
 #include "oled_driver.h"
 
+void meowing(void) {
+    oled_set_cursor(10,2);
+    oled_write_P(PSTR("    "), false);
+    oled_set_cursor(14,3);
+    oled_write_P(PSTR("    "), false);
+    oled_set_cursor(12,4);
+    oled_write_P(PSTR("    "), false);
+
+    if (meow == 0) {
+        oled_set_cursor(10, 2);
+        oled_write_P(PSTR("Meow"), false);
+    } else if (meow == 1) {
+        oled_set_cursor(14, 3);
+        oled_write_P(PSTR("Meow"), false);
+    } else {
+        oled_set_cursor(12, 4);
+        oled_write_P(PSTR("Meow"), false);
+    }
+};
+
+
 bool oled_task_user(void){
     oled_clear();
 
-    uint8_t curr_layer = biton32(layer_state);
+    if (is_keyboard_left()) {
+        uint8_t curr_layer = biton32(layer_state);
 
-    switch (curr_layer) {
-        case 0:
-            oled_write_P(PSTR("Layer: Base\n"), false);
-            break;
-        case 1:
-            oled_write_P(PSTR("Layer: Float\n"), false);
-            break;
-        case 2:
-            oled_write_P(PSTR("Layer: Mirror\n"), false);
-            break;
-        case 3:
-            oled_write_P(PSTR("Layer: Arrows\n"), false);
-            break;
-        case 4:
-            oled_write_P(PSTR("Layer: Nums\n"), false);
-            break;
-        case 5:
-            oled_write_P(PSTR("Layer: Lower\n"), false);
-            break;
-        case 6:
-            oled_write_P(PSTR("Layer: Raise\n"), false);
-            break;
-        case 7:
-            oled_write_P(PSTR("Layer: Tri\n"), false);
-            break;
-    };
+        switch (curr_layer) {
+            case 0:
+                oled_write_P(PSTR("Layer: Base\n"), false);
+                break;
+            case 1:
+                oled_write_P(PSTR("Layer: Float\n"), false);
+                break;
+            case 2:
+                oled_write_P(PSTR("Layer: Mirror\n"), false);
+                break;
+            case 3:
+                oled_write_P(PSTR("Layer: Arrows\n"), false);
+                break;
+            case 4:
+                oled_write_P(PSTR("Layer: Nums\n"), false);
+                break;
+            case 5:
+                oled_write_P(PSTR("Layer: Lower\n"), false);
+                break;
+            case 6:
+                oled_write_P(PSTR("Layer: Raise\n"), false);
+                break;
+            case 7:
+                oled_write_P(PSTR("Layer: Tri\n"), false);
+                break;
+            default:
+                oled_write_P(PSTR("Undefined Layer\n"), false);
+                break;
+        };
 
-    led_t led_state = host_keyboard_led_state();  // caps lock stuff, prints CAPS on new line if caps led is on
-    oled_set_cursor(0, 1);
-    oled_write_P(led_state.caps_lock ? PSTR("CAPS") : PSTR("       "), false);
-
+        led_t led_state = host_keyboard_led_state();  // caps lock stuff, prints CAPS on new line if caps led is on
+        oled_set_cursor(0, 1);
+        oled_write_P(led_state.caps_lock ? PSTR("CAPS") : PSTR("       "), false);
+    } else {
+        oled_write_P(PSTR("Avalanche CCB\n\n"), false);
+        oled_write_P(PSTR(" /\\_/\\"), false);
+        //if (meow == 0) {
+            //oled_write_P(PSTR("  Meow"), false);
+        //}
+        oled_write_P(PSTR("\n( o.o )"), false);
+        //if (meow == 1) {
+            //oled_write_P(PSTR("     Meow"), false);
+        //}
+        oled_write_P(PSTR("\n > ^ <"), false);
+        //if (meow == 2) {
+            //oled_write_P(PSTR("  Meow"), false);
+        //}
+        meowing();
+    }
     return true;
 };
+
 #endif
-
-
 
 // Process record user, handle layers and special keys
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
-        last_keycode = keycode;
+        meow = (meow + 1) % 3;
+        if (meow != last_meow){
+            last_meow = meow;
+        }
+        oled_task_user();
     }
     switch (keycode) {
         case LOWER:
